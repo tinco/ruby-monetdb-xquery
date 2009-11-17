@@ -1,0 +1,32 @@
+
+## Use: nmake -f makefile.msc install
+
+# Nothing much configurable below
+
+TOPDIR = .\..\..
+SRCDIR = $(TOPDIR)\..\src\ruby
+!INCLUDE $(TOPDIR)\rules.msc
+all: all-recursive all-msc
+check: check-recursive check-msc
+install: install-recursive install-msc
+adapter-1-all: "adapter-1-dir" "adapter-1-Makefile"
+	$(CD) "adapter" && $(MAKE) /nologo $(MAKEDEBUG) "prefix=$(prefix)" "bits=$(bits)" all 
+adapter-1-dir: 
+	if not exist "adapter" $(MKDIR) "adapter"
+adapter-1-Makefile: "$(SRCDIR)\adapter\Makefile.msc"
+	$(INSTALL) "$(SRCDIR)\adapter\Makefile.msc" "adapter\Makefile"
+adapter-1-check: "adapter"
+	$(CD) "adapter" && $(MAKE) /nologo $(MAKEDEBUG) "prefix=$(prefix)" "bits=$(bits)" check
+adapter-1-install: "$(bindir)" "$(libdir)"
+	$(CD) "adapter" && $(MAKE) /nologo $(MAKEDEBUG) "prefix=$(prefix)" "bits=$(bits)" install
+all-recursive: "adapter-1-all" 
+check-recursive: "adapter-1-check" 
+install-recursive: "adapter-1-install" 
+EXTRA_DIST_DIR =  examples lib
+INCLUDES = -I$(SRCDIR)
+gem_monetdb =  FILES DIR
+all-msc:
+check-msc: all-msc
+install-msc: install-exec install-data
+install-exec:  
+install-data:

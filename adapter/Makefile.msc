@@ -1,0 +1,19 @@
+
+## Use: nmake -f makefile.msc install
+
+# Nothing much configurable below
+
+TOPDIR = .\..\..\..
+SRCDIR = $(TOPDIR)\..\src\ruby\adapter
+!INCLUDE $(TOPDIR)\rules.msc
+all: all-msc
+check: check-msc
+install: install-msc
+INCLUDES = -I$(SRCDIR)
+EXTRA_DIST_DIR =  active_record lib
+gem_adapter =  FILES DIR
+all-msc:
+check-msc: all-msc
+install-msc: install-exec install-data
+install-exec:  
+install-data:
