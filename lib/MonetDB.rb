@@ -14,6 +14,8 @@
 # Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
 # Copyright August 2008-2009 MonetDB B.V.
 # All Rights Reserved.
+#
+# This file has been edited by Tinco Andringa to support XQuery
 
 
 # A typical sequence of events is as follows:
@@ -22,7 +24,6 @@
 # A result set object  has methods for fetching rows, moving around in the result set, obtaining column metadata, and releasing the result set.
 # Use a row fetching method such as 'fetch_row' or an iterator such as each to access the rows of the result set.
 # Call 'free' to release the result set. 
-
 
 #module MonetDB
 
