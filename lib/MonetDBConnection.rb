@@ -38,6 +38,7 @@ MSG_SCHEMA_HEADER     = '%'
 MSG_INFO              = '!' # info response from mserver
 MSG_TUPLE             = '['
 MSG_PROMPT            =  ""
+MSG_WARNING						=	'#' # Warning from server, this is just a guess!
 
 
 REPLY_SIZE            = '-1'
@@ -50,7 +51,7 @@ class MonetDBConnection
  
   
   # enable debug output
-  @@DEBUG               = false
+  @@DEBUG               = true
 
   # hour in seconds, used for timezone calculation
   @@HOUR                = 3600
@@ -97,22 +98,38 @@ class MonetDBConnection
   def connect(db_name = 'demo', auth_type = 'SHA1')
     @database = db_name
     @auth_type = auth_type
-    
-    @socket = TCPSocket.new(@host, @port.to_i)  
+
+	  puts "making socket"	
+    @socket = TCPSocket.new(@host, @port.to_i)
+
+    ##DEBUG
+    puts "made socket going to connect."
+
     if real_connect
-      set_timezone
+      puts "did real_connect_going to set reply_size"
+      set_timezone if @lang == 'sql' #set_timezone executes an SQL query.
       set_reply_size
+      puts "succeeded going to return true"
       true
-    end
-    false
+		else #.. obviously should be an else...
+    	#going to return false anyway?
+    	puts "returning false.."
+			#FIX: wat dacht je van socket closen?
+			@socket.close
+    	false
+		end
   end
   
 
   # perform a real connection; retrieve challenge, proxy through merovinginan, build challenge and set the timezone
   def real_connect
-    
+    ##DEBUG
+    puts "retrieving challenge!"
     server_challenge = retrieve_server_challenge()
+   
     if server_challenge != nil
+      ##DEBUG
+      puts "and the challenge was not nil"
       salt = server_challenge.split(':')[0]
       @server_name = server_challenge.split(':')[1]
       @protocol = server_challenge.split(':')[2].to_i
@@ -145,18 +162,23 @@ class MonetDBConnection
     end
              
     if @socket != nil
+			##DEBUG
+      puts "connection established!"
       @connection_established = true
 
       send(reply)
       monetdb_auth = receive
       
-      if monetdb_auth.length == 0
+      if monetdb_auth.empty? || monetdb_auth[0].chr == MSG_WARNING
         # auth succedeed
+				puts "AUTH succeeded"
+				puts "Warning: #{monetdb_auth}" unless monetdb_auth.empty?
         true
       else
+				puts "AUTH FAILED!: #{monetdb_auth}"
         if monetdb_auth[0].chr == MSG_REDIRECT
         #redirection
-          
+          puts "redirection!"
           redirects = [] # store a list of possible redirects
           
           monetdb_auth.split('\n').each do |m|
@@ -220,6 +242,8 @@ class MonetDBConnection
           end
         elsif monetdb_auth[0].chr == MSG_INFO
           raise MonetDBConnectionError, monetdb_auth
+				else
+					puts "and that wasn't something we took in account!"
         end
       end
     end

@@ -214,9 +214,9 @@
     # Send a <b> user submitted </b> query to the server and store the response.
     # Returns and instance of MonetDBData.
     def query(q = "")
-      if  @connection != nil 
-        @data = MonetDBData.new(@connection)
-        @data.execute(q)    
+      if  @connection != nil
+        @data = MonetDBData.new(@connection, @lang)
+        puts @data.execute(q)
       end
       return @data
     end
