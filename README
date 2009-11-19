@@ -1,3 +1,4 @@
+Warning: this version has crude support for xquery added and has not been properly tested or completed, use with caution.
 == Standalone driver ==
 This directory contains the a ruby interface to monetdb5 
 written in pure ruby.
