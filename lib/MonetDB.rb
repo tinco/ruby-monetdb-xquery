@@ -219,9 +219,10 @@
       if  @connection != nil
         if @lang.downcase == 'sql'
           @data = MonetDBData.new(@connection)
-        else
+        elsif @lang.downcase == 'xquery'
           @data = MonetDBXmlData.new(@connection)
         end
+        @data.execute(q)
       end
       return @data
     end
