@@ -283,7 +283,7 @@ class MonetDBConnection
   def receive
     is_final, chunk_size = recv_decode_hdr
 
-    data = @socket.recv(chunk_size)
+    data = @socket.recv(chunk_size) if chunk_size > 0
 
     if chunk_size == 0
       return ""  # needed on ruby-1.8.6 linux/64bit; recv(0) hangs on this configuration. 
@@ -292,7 +292,7 @@ class MonetDBConnection
     if is_final == false 
       while is_final == false
         is_final, chunk_size = recv_decode_hdr
-        data +=  @socket.recv(chunk_size)
+        data +=  @socket.recv(chunk_size) if chunk_size > 0
       end
     end
 
@@ -397,7 +397,17 @@ class MonetDBConnection
     if @socket != nil
 
       fb = @socket.recv(1)
+
+      if (fb.empty?)
+        @socket.close
+        raise MonetDBSocketError.new("MonetDB connection closed by peer")
+      end
+
       sb = @socket.recv(1)
+      if(sb.empty?)
+        @socket.close
+        raise MonetDBSocketError.new("MonetDB connection closed by peer")
+      end
 
       # Use execeptions handling to keep compatibility between different ruby
       # versions.
