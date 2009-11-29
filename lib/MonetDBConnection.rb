@@ -108,9 +108,7 @@ class MonetDBConnection
       set_timezone if @lang == 'sql' #set_timezone executes an SQL query.
       set_reply_size
       true
-    else #.. obviously should be an else...
-      #FIX: wat dacht je van socket closen?
-      @socket.close
+    else
       false
     end
   end
@@ -227,8 +225,7 @@ class MonetDBConnection
         elsif monetdb_auth[0].chr == MSG_INFO
           raise MonetDBConnectionError, monetdb_auth
         else
-          #So.. what are we going when the elsifs don't work eh?
-          puts "and that wasn't something we took in account!"
+          raise MonetDBConnectionError,"Something weird happened: #{monetdb_auth}"
         end
       end
     end

@@ -29,7 +29,7 @@ require 'logger'
 class MonetDBData
   @@DEBUG               = false
 
-  attr_accessor :errors, :result, :others
+  attr_reader :errors, :result, :others
   def initialize(connection, lang = 'sql')
     @connection = connection
 
@@ -94,19 +94,19 @@ class MonetDBData
   # Format raw incoming xquery results to clean xml files
   # and throw errors when necessary.
   def parse_xquery_result(data)
-    self.errors = ""
-    self.result = ""
-    self.others = ""
+    @errors = ""
+    @result = ""
+    @others = ""
     data.each_line do |line|
       if line[0].chr == '!'
-        self.errors << line[1..line.length]
+        @errors << line[1..line.length]
       elsif line[0].chr == '='
-        self.result << line[1..line.length]
+        @result << line[1..line.length]
       else
-        self.others << line
+        @others << line
       end
     end
-    self.result.chomp!
+    @result.chomp!
   end
 
   # Free memory used to store the record set
@@ -124,6 +124,9 @@ class MonetDBData
     @row_count = 0
     @row_offset = 10
 
+    @errors = ""
+    @result = ""
+    @others = ""
   end
 
   # Returns the record set entries hashed by column name orderd by column position
