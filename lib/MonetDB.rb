@@ -29,6 +29,7 @@
 
   require 'MonetDBConnection'
   require 'MonetDBData'
+  require 'MonetDBXmlData'
   require 'MonetDBExceptions'
   
     # = Introduction
@@ -216,8 +217,11 @@
     # Returns and instance of MonetDBData.
     def query(q = "")
       if  @connection != nil
-        @data = MonetDBData.new(@connection, @lang)
-        puts @data.execute(q)
+        if @lang.downcase == 'sql'
+          @data = MonetDBData.new(@connection)
+        else
+          @data = MonetDBXmlData.new(@connection)
+        end
       end
       return @data
     end
