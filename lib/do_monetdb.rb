@@ -8,9 +8,11 @@ module DataObjects
 
     attr_reader :connected
 
-    class Connection
-      def initialize(uri)
-        @monetdb = MonetDB::MonetDB.new
+    class Connection < DataObjects::Connection
+      def self.new(uri_s)
+        uri = DataObjects::URI::parse(uri_s)
+
+        monetdb = MonetDB::MonetDB.new
         username = uri.user
         password = uri.password
         host = uri.host
@@ -20,7 +22,7 @@ module DataObjects
         lang = query["lang"]
         auth_type = query["auth_type"]
 
-        @connected = @monetdb.connect
+        monetdb.connect
       end
     end
   end
