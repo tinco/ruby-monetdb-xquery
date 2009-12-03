@@ -10,7 +10,7 @@ module DataObjects
 
     class Connection
       def initialize(uri)
-        @monetdb = MonetDB.new
+        @monetdb = MonetDB::MonetDB.new
         username = uri.user
         password = uri.password
         host = uri.host
@@ -28,16 +28,10 @@ end
 
 module DataMapper
   module Adapters
-    class MonetDBAdapter < DataObjectsAdapter
-      def read
-        with_connection do |connection|
-          command = connection.create_command(statement)
-          command.set_types(types)
-          result = command.execute_reader(*bind_values)
-        end
-        result
-      end
+    class MonetDBSQLAdapter < DataObjectsAdapter
     end
     const_added (:MonetDBAdapter)
+    class MonetDBXQueryAdapter
+    end
   end
 end

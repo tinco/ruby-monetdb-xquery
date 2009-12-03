@@ -25,7 +25,7 @@
 # Use a row fetching method such as 'fetch_row' or an iterator such as each to access the rows of the result set.
 # Call 'free' to release the result set. 
 
-#module MonetDB
+module MonetDB
 
   require 'MonetDBConnection'
   require 'MonetDBData'
@@ -277,4 +277,4 @@
       @connection = nil
     end
   end
-#end
+end
