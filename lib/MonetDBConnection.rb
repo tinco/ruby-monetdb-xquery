@@ -19,7 +19,7 @@
 
 # Implements the MAPI communication protocol
 
-module MonetDB
+module MonetDBDriver
   require 'socket'
   require 'time'
   require 'hasher'

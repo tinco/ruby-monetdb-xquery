@@ -25,7 +25,7 @@ require 'MonetDBConnection'
 
 require 'logger'
 
-module MonetDB
+module MonetDBDriver
   class MonetDBData 
     @@DEBUG               = false
 

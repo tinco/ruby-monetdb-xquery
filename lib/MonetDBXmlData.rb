@@ -18,7 +18,7 @@
 
 # Models a MonetDB RecordSet
 require 'MonetDBConnection'
-module MonetDB
+module MonetDBDriver
   class MonetDBXmlData
     @@DEBUG               = false
 

@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 # Exception classes for the ruby-monetdb driver
-module MonetDB
+module MonetDBDriver
   class MonetDBQueryError < StandardError
     def initialize(e)
       $stderr.puts e

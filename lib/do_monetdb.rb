@@ -7,22 +7,24 @@ module DataObjects
     @monetdb
 
     attr_reader :connected
+    attr_accessor :lang
 
     class Connection < DataObjects::Connection
       def initialize(uri_s)
         uri = DataObjects::URI::parse(uri_s)
 
-        @monetdb = MonetDB::MonetDB.new
-        username = uri.user
-        password = uri.password
-        host = uri.host
-        port = uri.port
-        db_name = uri.path
+        @monetdb = MonetDBDriver::MonetDB.new
+        username = uri.user || "monetdb"
+        password = uri.password || "monetdb"
+        host = uri.host || "127.0.0.1"
+        port = uri.port || "50000"
+        db_name = uri.path || "test"
 
-        lang = query["lang"]
-        auth_type = query["auth_type"]
+        lang = uri.query["lang"] || "sql"
+        @lang = lang
+        auth_type = uri.query["auth_type"] || "SHA1"
 
-        @monetdb.connect(user, password, lang, host, port, db_name, auth_type)
+        @monetdb.connect(username, password, lang, host, port, db_name, auth_type)
       end
 
       def dispose
@@ -31,19 +33,23 @@ module DataObjects
       end
 
       def create_command(text)
-        XQueryCommand.new(self, text) if @monetdb.lang == 'xquery'
+        XQueryCommand.new(self, text) if @lang == 'xquery'
+      end
+
+      def execute(string)
+        @monetdb.query(string)
       end
     end #class Connection
 
     require 'xmlsimple'
     class XQueryCommand < DataObjects::Command
-      def execute_non_query(query)
-        @connection.query(query)
+      def execute_non_query(*args)
+        @connection.execute(@text)
       end
 
-      def execute_reader(query)
-        result = @connection.query(query)
-        data = XmlSimple.xml_in(result.result)
+      def execute_reader(*options)
+        result = @connection.execute(@text)
+        data = XmlSimple.xml_in(result.result, *options)
         #turn xml into reader
       end
 

@@ -25,13 +25,12 @@
 # Use a row fetching method such as 'fetch_row' or an iterator such as each to access the rows of the result set.
 # Call 'free' to release the result set. 
 
-module MonetDB
+require 'MonetDBConnection'
+require 'MonetDBData'
+require 'MonetDBXmlData'
+require 'MonetDBExceptions'
 
-  require 'MonetDBConnection'
-  require 'MonetDBData'
-  require 'MonetDBXmlData'
-  require 'MonetDBExceptions'
-  
+module MonetDBDriver
     # = Introduction
     #
     # A typical sequence of events is as follows:
