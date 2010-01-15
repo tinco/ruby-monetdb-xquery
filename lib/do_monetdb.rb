@@ -44,7 +44,10 @@ module DataObjects
 
     class XQueryCommand < DataObjects::Command
       def execute_non_query(*args)
-        @connection.execute(@text)
+        reader = execute_reader
+        insert_id = reader.result["InsertID"]
+        affected_rows = reader.result["AffectedRows"]
+        new Result(self, affected_rows, insert_id)
       end
 
       def execute_reader(*options)
@@ -71,6 +74,10 @@ module DataObjects
         @result = XmlSimple.xml_in(xml, 'ForceArray' => false, *@options)
         @modelname = @result.keys.first
         @position = 0
+      end
+
+      def result
+        @result
       end
 
       def fields
