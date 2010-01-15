@@ -80,7 +80,6 @@ module DataMapper
           statement << "</#{model_name}>"
           statement << "}</#{model_name.pluralize}>"
 
-          puts statement
           return statement, bind_values
         end
 

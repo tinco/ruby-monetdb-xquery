@@ -53,7 +53,6 @@ module DataObjects
       def execute_reader(*options)
         result = @connection.execute(@text)
         reader = XQueryReader.new(@column_types, *options)
-        puts "XML result: #{result.result}"
         reader.read(result.result)
         reader
       end
@@ -102,11 +101,11 @@ module DataObjects
         fields.count
       end
 
-      def each
-        @result[@modelname].each do |row|
-          yield row
-        end
-      end
+      #def each
+      #  @result[@modelname].each do |row|
+      #    yield row
+      #  end
+      #end
     end #class Reader
   end #module MonetDB
 
