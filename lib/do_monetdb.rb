@@ -53,6 +53,7 @@ module DataObjects
       def execute_reader(*options)
         result = @connection.execute(@text)
         reader = XQueryReader.new(@column_types, *options)
+        puts "XML result: #{result.result}"
         reader.read(result.result)
         reader
       end
@@ -73,7 +74,7 @@ module DataObjects
       def read(xml)
         @result = XmlSimple.xml_in(xml, 'ForceArray' => false, *@options)
         @modelname = @result.keys.first
-        @position = 0
+        @position = -1
       end
 
       def result
