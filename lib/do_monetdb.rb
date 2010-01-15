@@ -10,6 +10,7 @@ module DataObjects
     attr_accessor :lang
 
     class Connection < DataObjects::Connection
+      #Example: monetdb://localhost:51016?lang=xquery
       def initialize(uri_s)
         uri = DataObjects::URI::parse(uri_s)
 
@@ -41,7 +42,6 @@ module DataObjects
       end
     end #class Connection
 
-    require 'xmlsimple'
     class XQueryCommand < DataObjects::Command
       def execute_non_query(*args)
         @connection.execute(@text)
@@ -49,29 +49,55 @@ module DataObjects
 
       def execute_reader(*options)
         result = @connection.execute(@text)
-        data = XmlSimple.xml_in(result.result, *options)
-        #turn xml into reader
+        reader = XQueryReader.new(@column_types, *options)
+        reader.read(result.result)
+        reader
       end
 
       def set_types(column_types)
-        raise NotImplementedError.new
+        @column_types = column_types
+        #raise NotImplementedError.new
       end
     end #class MonetDBCommand
 
-    class Reader < DataObjects::Reader
+    require 'xmlsimple'
+    class XQueryReader < DataObjects::Reader
+      def initialize(column_types, *options)
+        @column_types = column_types
+        @options = options
+      end
+
+      def read(xml)
+        @result = XmlSimple.xml_in(xml, 'ForceArray' => false, *@options)
+        @modelname = @result.keys.first
+        @position = 0
+      end
+
       def fields
+        @result[@modelname][0].keys
       end
 
       def values
+        fields.collect do |f| @result[@modelname][@position][f] end
       end
 
       def close
+        @result = nil
       end
 
       def next!
+        @position += 1
+        not @result[@modelname][@position].nil? || nil
       end
 
       def field_count
+        fields.count
+      end
+
+      def each
+        @result[@modelname].each do |row|
+          yield row
+        end
       end
     end #class Reader
   end #module MonetDB
