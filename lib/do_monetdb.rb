@@ -101,11 +101,11 @@ module DataObjects
         fields.count
       end
 
-      #def each
-      #  @result[@modelname].each do |row|
-      #    yield row
-      #  end
-      #end
+      def each
+        @result[@modelname].each do |row|
+          yield row
+        end
+      end
     end #class Reader
   end #module MonetDB
 
