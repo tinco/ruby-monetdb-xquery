@@ -82,10 +82,10 @@ module DataObjects
         @result = XmlSimple.xml_in(xml, 'ForceArray' => false, *@options)
         @modelname = @result.keys.first
         @position = -1
+        puts "Resulting hash: #{@result.inspect}"
         #This is necessary for DataMapper's Hash parsing to go well:
-        if @result[@modelname].length == 1
-          @result[@modelname] = [@result[@modelname]]
-        end
+        first_element = @result[@modelname]
+        @result[@modelname] = first_element.respond_to?(:to_ary) ? first_element.to_ary : [ first_element ]
       end
 
       def result
