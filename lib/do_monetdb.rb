@@ -44,14 +44,22 @@ module DataObjects
 
     class XQueryCommand < DataObjects::Command
       def execute_non_query(*args)
-        reader = execute_reader
+        reader = execute_reader(*args)
         insert_id = reader.result["InsertID"]
         affected_rows = reader.result["AffectedRows"]
         new Result(self, affected_rows, insert_id)
       end
 
       def execute_reader(*options)
-        result = @connection.execute(@text)
+        sql = @text.gsub(/\?/) do |q|
+          options.shift
+        end
+        puts "Query: #{sql}"
+        result = @connection.execute(sql)
+        puts "Query result: #{result.result}"
+        if not result.errors.empty?
+          raise Exception.new "MonetDB XQuery Exception: #{result.errors}"
+        end
         reader = XQueryReader.new(@column_types, *options)
         reader.read(result.result)
         reader
@@ -74,6 +82,10 @@ module DataObjects
         @result = XmlSimple.xml_in(xml, 'ForceArray' => false, *@options)
         @modelname = @result.keys.first
         @position = -1
+        #This is necessary for DataMapper's Hash parsing to go well:
+        if @result[@modelname].length == 1
+          @result[@modelname] = [@result[@modelname]]
+        end
       end
 
       def result

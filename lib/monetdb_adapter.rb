@@ -48,7 +48,7 @@ module DataMapper
             column_name << "#{xvar(qualify)}/"
           end
 
-          column_name << property.field
+          column_name << xvar(property.field)
         end
 
         # Constructs select statement for given query,
@@ -79,28 +79,36 @@ module DataMapper
           statement = "<#{model_name.pluralize}>{"
           document ="doc(\"#{query.model.storage_name(name)}\")"
           element = xvar(model_name)
+          statement << "\n"
 
           #for
           statement << "for #{element} in "
           statement << "#{document}/#{model_name.pluralize}/#{model_name} "
-
-          #where
-          if query.conditions
-            statement << "where "
-            conditions, bind_values = conditions_statement(query.conditions)
-            statement << conditions
-          end
+          statement << "\n"
 
           #let
           query.fields.each do |property|
             statement << "let #{xvar(property.name)} := #{element}/#{property.name} "
+            statement << "\n"
           end
+
+
+          #where
+          if query.conditions && query.conditions.class != Query::Conditions::NullOperation
+            statement << "where "
+            conditions, bind_values = conditions_statement(query.conditions)
+            statement << conditions
+            statement << "\n"
+          end
+
           #order by: statement << "order by $date" if group_by && group_by.any?
 
           #return
           statement << "return <#{model_name}>"
+          statement << "\n"
           query.fields.each do |property|
             statement << "{ #{xvar(property.name)} } "
+            statement << "\n"
           end
           statement << "</#{model_name}>"
           statement << "}</#{model_name.pluralize}>"
@@ -170,6 +178,10 @@ module DataMapper
           # update conditions_statement to use it
 
           # break exclusive Range queries up into two comparisons ANDed together
+          if value.kind_of? String
+            value = "\"#{value}\""
+          end
+
           if value.kind_of?(Range) && value.exclude_end?
             operation = Query::Conditions::Operation.new(
               :and, Query::Conditions::Comparison.new(:gte, subject, value.first),
