@@ -79,7 +79,6 @@ module DataObjects
 
       def set_types(column_types)
         @column_types = column_types
-        #raise NotImplementedError.new
       end
     end #class MonetDBCommand
 
@@ -98,6 +97,8 @@ module DataObjects
         #This is necessary for DataMapper's Hash parsing to go well:
         first_element = @result[@modelname]
         @result[@modelname] = first_element.respond_to?(:to_ary) ? first_element.to_ary : [ first_element ]
+        cast_result
+        puts "Resulting hash: #{@result.inspect}"
       end
 
       def result
@@ -128,6 +129,26 @@ module DataObjects
       def each
         @result[@modelname].each do |row|
           yield row
+        end
+      end
+
+      private
+      def cast_result
+        @result[@modelname].each do |node|
+          fields.each_with_index do |f, i|
+            node[f] = cast(i, node[f])
+          end
+        end
+      end
+
+      def cast(column, value)
+        case @column_types.reverse[column].name #yeah, reverse.. -_-
+        when 'String'
+          value
+        when 'Integer'
+          value.to_i
+        else
+          raise Exception.new "XQueryReader unsupported datatype: #{@column_types.reverse[column].name}"
         end
       end
     end #class Reader

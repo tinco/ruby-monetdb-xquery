@@ -53,7 +53,17 @@ module DataMapper
 
         bind_values = conditions_bind_values.concat(bind_values) #reverse order from SQL
 
-        puts "Update statement bind_values: #{bind_values.inspect}"
+        execute(statement, *bind_values).affected_rows
+      end
+
+      def delete(collection)
+        query = collection.query
+
+        bind_values = []
+
+        statement, conditions_bind_values = delete_statement(query)
+
+        bind_values = conditions_bind_values.concat(bind_values) #reverse order from SQL
 
         execute(statement, *bind_values).affected_rows
       end
@@ -194,6 +204,23 @@ module DataMapper
             property.type == String ? "\"?\"" : "?"}"
           end.join(', ')
           statement << " ) "
+
+          return statement, bind_values
+        end
+
+        def delete_statement(query)
+          model = query.model
+          name = self.name
+
+          bind_values = []
+
+          iteration, bind_values = iterate_statement(query, bind_values)
+
+          #let $book := doc("greetings.xml")//greet[1]
+          #return
+          #(do delete $book)
+          statement =  "#{iteration} return \n"
+          statement << " ( do delete  #{xvar(model.name.downcase)} )"
 
           return statement, bind_values
         end
