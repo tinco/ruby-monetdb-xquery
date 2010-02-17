@@ -44,25 +44,37 @@ module DataObjects
 
     class XQueryCommand < DataObjects::Command
       def execute_non_query(*args)
-        reader = execute_reader(*args)
-        insert_id = reader.result["InsertID"]
-        affected_rows = reader.result["AffectedRows"]
-        new Result(self, affected_rows, insert_id)
+        result = execute_query(*args)
+        insert_id = 0 #reader.result["InsertID"]
+        affected_rows = 0 #reader.result["AffectedRows"]
+        Result.new(self, affected_rows, insert_id)
       end
 
       def execute_reader(*options)
-        sql = @text.gsub(/\?/) do |q|
-          options.shift
-        end
-        puts "Query: #{sql}"
-        result = @connection.execute(sql)
-        puts "Query result: #{result.result}"
+        result = execute_query(*options)
         if not result.errors.empty?
           raise Exception.new "MonetDB XQuery Exception: #{result.errors}"
         end
         reader = XQueryReader.new(@column_types, *options)
         reader.read(result.result)
         reader
+      end
+
+      def execute_query(*bind_values)
+        query = escape_xquery(*bind_values)
+        puts "Query: #{query}"
+        result = @connection.execute(query)
+        if not result.errors.empty?
+          raise Exception.new "MonetDB XQuery Exception: #{result.errors}"
+        end
+        puts "Query result: #{result.result}"
+        result
+      end
+
+      def escape_xquery(*bind_values)
+        @text.gsub(/\?/) do |q|
+          bind_values.shift
+        end
       end
 
       def set_types(column_types)
@@ -73,13 +85,13 @@ module DataObjects
 
     require 'xmlsimple'
     class XQueryReader < DataObjects::Reader
-      def initialize(column_types, *options)
+      def initialize(column_types, options=nil)
         @column_types = column_types
         @options = options
       end
 
       def read(xml)
-        @result = XmlSimple.xml_in(xml, 'ForceArray' => false, *@options)
+        @result = XmlSimple.xml_in(xml, {'ForceArray' => false})
         @modelname = @result.keys.first
         @position = -1
         puts "Resulting hash: #{@result.inspect}"

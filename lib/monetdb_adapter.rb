@@ -36,6 +36,28 @@ module DataMapper
         records
       end
 
+      def update(attributes, collection)
+        query = collection.query
+
+        properties = []
+        bind_values = []
+
+        # make the order of the properties consistent
+        query.model.properties(name).each do |property|
+          next unless attributes.key?(property)
+          properties << property
+          bind_values << attributes[property]
+        end
+
+        statement, conditions_bind_values = update_statement(properties, query)
+
+        bind_values = conditions_bind_values.concat(bind_values) #reverse order from SQL
+
+        puts "Update statement bind_values: #{bind_values.inspect}"
+
+        execute(statement, *bind_values).affected_rows
+      end
+
       module XQuery #:nodoc:
         #TODO rename to something sensible (and research if qualify is necessary at all
         def property_to_column_name(property, qualify)
@@ -57,15 +79,6 @@ module DataMapper
         #
         # @api private
         def query_statement(query)
-          qualify  = query.links.any?
-          fields   = query.fields
-          order_by = query.order
-          group_by = if query.unique?
-                       fields.select { |property| property.kind_of?(Property) }
-                     end
-          model = query.model
-          model_name = model.name.downcase
-
           #for $book in doc("books.xml")/books
           #let $info := $book/bookinfo
           #let $title := $info/title,
@@ -73,16 +86,44 @@ module DataMapper
           #    $date := $info/pubdate order by $date descending 
           #return if (exists($isbn))
           #then concat($date, " ", $isbn, " ", $title) else ()
-
           bind_values = []
 
+          model_name = query.model.name.downcase
           statement = "<#{model_name.pluralize}>{"
-          document ="doc(\"#{query.model.storage_name(name)}\")"
-          element = xvar(model_name)
           statement << "\n"
 
+          #make select clause:
+          iteration, bind_values = iterate_statement(query, bind_values)
+          statement << iteration
+          #return
+          statement << "return <#{model_name}>"
+          statement << "\n"
+          query.fields.each do |property|
+            statement << "{ #{xvar(property.name)} } "
+            statement << "\n"
+          end
+          statement << "</#{model_name}>"
+          statement << "}</#{model_name.pluralize}>"
+
+          return statement, bind_values
+        end
+
+        def iterate_statement(query, bind_values)
+          qualify  = query.links.any?
+          fields   = query.fields
+          order_by = query.order
+          group_by = if query.unique?
+                       fields.select { |property| property.kind_of?(Property) }
+                     end
+
+          model = query.model
+          model_name = model.name.downcase
+
+          element = xvar(model_name)
+          document ="doc(\"#{query.model.storage_name(name)}\")"
+
           #for
-          statement << "for #{element} in "
+          statement = "for #{element} in "
           statement << "#{document}/#{model_name.pluralize}/#{model_name} "
           statement << "\n"
 
@@ -91,7 +132,6 @@ module DataMapper
             statement << "let #{xvar(property.name)} := #{element}/#{property.name} "
             statement << "\n"
           end
-
 
           #where
           if query.conditions && query.conditions.class != Query::Conditions::NullOperation
@@ -102,16 +142,58 @@ module DataMapper
           end
 
           #order by: statement << "order by $date" if group_by && group_by.any?
+          return statement, bind_values
+        end
 
-          #return
-          statement << "return <#{model_name}>"
-          statement << "\n"
-          query.fields.each do |property|
-            statement << "{ #{xvar(property.name)} } "
-            statement << "\n"
+        def insert_statement(model, properties, serial)
+          model_name = model.name.downcase
+          statement = "do insert "
+
+          statement << "<#{model_name}>"
+
+          if serial
+            serial_query = "<#{serial.field}>" #Follows mad ugly auto_increment:
+            serial_query << "{ xs:integer(number(fn:max(doc(\"#{model.storage_name(name)}\")"
+            serial_query << "/#{model_name.pluralize}/#{model_name}/#{serial.field})) + 1)}"
+            serial_query << "</#{serial.field}>"
+            statement << serial_query
           end
+
+          #bouw element
+          statement << properties.map {|property| "<#{property.field}>?</#{property.field}>"}.join('')
+
           statement << "</#{model_name}>"
-          statement << "}</#{model_name.pluralize}>"
+
+          statement << "as last into doc(\"#{model.storage_name(name)}\")/#{model_name.pluralize}"
+
+          #if supports_returning? && serial
+          #  statement << returning_clause(serial)
+          #end
+
+          #hij moet eigenlijk ook iets returnen, met rows affected etc.
+
+          statement
+        end
+
+        def update_statement(properties, query)
+          model = query.model
+          name = self.name
+
+          bind_values = []
+
+          iteration, bind_values = iterate_statement(query, bind_values)
+
+          #let $formal := doc("greetings.xml")//greet[1]
+          #return
+          #(do replace value of $formal/@kind with "impolite",
+          # do replace value of $formal with "Bugger Off")
+          statement =  "#{iteration} return \n"
+          statement << " ( "
+          statement << properties.map do |property|
+            "do replace value of #{xvar(property.field)} with #{
+            property.type == String ? "\"?\"" : "?"}"
+          end.join(', ')
+          statement << " ) "
 
           return statement, bind_values
         end
@@ -212,7 +294,7 @@ module DataMapper
               #TODO I assume comparisons with nil are always equals? (not equals apparently is compound)
               return "empty(#{column_name})"
             else
-              return "#{column_name} #{operator} ?", [ value ].compact
+              return "#{column_name}/text() #{operator} ?", [ value ].compact #/text() is an optimalisation (wrt. index generation)
             end
             #return "#{column_name} #{operator} #{value.nil? ? 'NULL' : '?'}", [ value ].compact
           end
@@ -255,7 +337,7 @@ module DataMapper
         # @api private
         def subquery_statement(query, source_key, target_key, qualify)
           query = subquery_query(query, source_key)
-          select_statement, bind_values = select_statement(query)
+          select_statement, bind_values = query_statement(query)
 
           statement = if target_key.size == 1
                         property_to_column_name(target_key.first, qualify)
