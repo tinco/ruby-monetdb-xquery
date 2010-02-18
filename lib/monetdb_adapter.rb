@@ -68,6 +68,37 @@ module DataMapper
         execute(statement, *bind_values).affected_rows
       end
 
+      ## Methods for migrations:
+      # @api semipublic
+      def upgrade_model_storage(model)
+        true #unnecessary with xml
+      end
+
+      # @api semipublic
+      def create_model_storage(model)
+        name = self.name
+        storage_name = model.storage_name(name)
+
+        return false if storage_exists?(storage_name)
+
+        url = "http://www.ikweethetniet.nl" #maybe you know.. set up a server and download it from there :P
+        execute("pf:add-doc(\"#{url}\", \"#{storage_name}\", \"#{storage_name}\", 10)")
+        true
+      end
+
+      # @api semipublic
+      def destroy_model_storage(model)
+        return true unless storage_exists?(model.storage_name(name))
+        execute("pf:del-doc(\"#{model.storage_name(self.name)}\")")
+        true
+      end
+
+      # @api semipublic
+      def storage_exists?
+        #tsjeck it!
+      end
+      ##
+
       module XQuery #:nodoc:
         #TODO rename to something sensible (and research if qualify is necessary at all
         def property_to_column_name(property, qualify)
