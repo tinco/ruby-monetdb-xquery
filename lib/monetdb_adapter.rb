@@ -97,6 +97,10 @@ module DataMapper
       def storage_exists?
         #tsjeck it!
       end
+
+      def field_exists?(storage_name, column_name)
+        true # yeah, I just went there...
+      end
       ##
 
       module XQuery #:nodoc:
