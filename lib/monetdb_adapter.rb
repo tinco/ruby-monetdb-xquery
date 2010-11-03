@@ -83,7 +83,8 @@ module DataMapper
 
       def destroy_model_storage(model)
         return true unless storage_exists?(model.storage_name(name))
-        execute(drop_document_statement(model))
+        #execute(drop_document_statement(model))
+        execute("pf:del-doc(\"#{model.storage_name(self.name)}\")")
         true
       end
 
