@@ -224,7 +224,7 @@ module DataMapper
           if serial #Follows mad ugly auto_increment:
             serial_query = %Q{{
               let $__last_serial := fn:max(doc("#{model.storage_name(name)}")/#{model_name.pluralize}/#{model_name}/xs:integer(number(#{serial.field})))
-              let $__new_serial := if (string($__last_serial) = "") then 0 else ($__last_serial + 1)
+              let $__new_serial := if (string($__last_serial) = "") then 1 else ($__last_serial + 1)
               return <#{serial.field}>{$__new_serial}</#{serial.field}>}}
             statement << serial_query
           end
