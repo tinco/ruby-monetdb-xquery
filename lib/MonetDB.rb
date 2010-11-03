@@ -249,12 +249,22 @@ module MonetDBDriver
     def auto_commit(flag=true)
       @connection.set_auto_commit(flag)
     end
-  
+
     # Returns the current auto commit  (on/off) settings.
     def auto_commit?
       @connection.auto_commit?
     end
-    
+
+    # Turn algebra on/off
+    def algebra=(flag=true)
+      @connection.set_algebra(flag)
+    end
+
+    # Returns the current algebra (on/off) settings.
+    def algebra?
+      @connection.algebra?
+    end
+
     # Returns the name of the last savepoint in a transactions pool
     def transactions
       @connection.savepoint

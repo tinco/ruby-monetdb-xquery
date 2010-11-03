@@ -37,6 +37,16 @@ module DataObjects
         XQueryCommand.new(self, text) if @lang == 'xquery'
       end
 
+      # Sets wether to use the algebra engine.
+      def algebra=(flag=true)
+        @monetdb.algebra=(flag)
+      end
+
+      # Returns the current algebra (on/off) settings.
+      def algebra?
+        @monetdb.algebra?
+      end
+
       def execute(string)
         @monetdb.query(string)
       end
@@ -90,15 +100,19 @@ module DataObjects
       end
 
       def read(xml)
-        @result = XmlSimple.xml_in(xml, {'ForceArray' => false})
-        @modelname = @result.keys.first
-        @position = -1
+        @result = XmlSimple.xml_in(xml, {'ForceArray' => false, 'KeepRoot' => true})
         puts "Resulting hash: #{@result.inspect}"
+        @modelname = @result.keys.first.singularize
+        @result = @result.values.first #Throw away the root
+        @position = -1
         #This is necessary for DataMapper's Hash parsing to go well:
         first_element = @result[@modelname]
-        @result[@modelname] = first_element.respond_to?(:to_ary) ? first_element.to_ary : [ first_element ]
-        cast_result
-        puts "Resulting hash: #{@result.inspect}"
+        if first_element.nil?
+          @result[@modelname] = []
+        else
+          @result[@modelname] = first_element.respond_to?(:to_ary) ? first_element.to_ary : [ first_element ]
+          cast_result
+        end
       end
 
       def result

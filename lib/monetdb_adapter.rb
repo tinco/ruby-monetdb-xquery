@@ -1,6 +1,6 @@
 require 'datamapper'
 require 'data_objects'
-require DataMapper.root / 'lib' / 'dm-core' / 'adapters' / 'data_objects_adapter'
+require 'dm-do-adapter'
 require 'do_monetdb.rb'
 
 module DataMapper
@@ -70,8 +70,15 @@ module DataMapper
 
       def create_model_storage(model)
         if not storage_exists?(model.storage_name(name))
-          create_document_statements(model).each do |s|
-            execute(s)
+          with_connection do |connection|
+            connection.algebra = false # Put command not supported by current MonetDB Algebra backend
+
+            create_document_statements(model).each do |s|
+              command = connection.create_command(s)
+              reader = command.execute_non_query
+            end
+
+            connection.algebra = true
           end
           true
         end
@@ -83,8 +90,7 @@ module DataMapper
 
       def destroy_model_storage(model)
         return true unless storage_exists?(model.storage_name(name))
-        #execute(drop_document_statement(model))
-        execute("pf:del-doc(\"#{model.storage_name(self.name)}\")")
+          execute(drop_document_statement(model))
         true
       end
 
@@ -97,9 +103,7 @@ module DataMapper
         with_connection do |connection|
           command = connection.create_command(documents_statement)
           command.set_types(types)
-          connection.set_algebra(false) # Put command not supported by current MonetDB Algebra backend
           reader = command.execute_reader([])
-          connection.set_algebra(true)
           records = reader.entries
         end
       end
@@ -125,14 +129,18 @@ module DataMapper
           "</documents>"
         end
 
+        def drop_document_statement(model)
+          "pf:del-doc(\"#{model.storage_name(name)}\")"
+        end
+
         def create_document_statements(model)
           model_name = model.name.downcase.pluralize
           location = "tmp/#{model.storage_name(name)}.xml"
           statements = []
           statements << "fn:put(<#{model_name}></#{model_name}>, \"#{location}\")"
-          statements << "<result>{pf:add-doc(" +
+          statements << "pf:add-doc(" +
             "\"#{location}\",\"#{model_name}\", " +
-            "\"#{model_name}\", 50)}</result>" #TODO find out what a good percentage is
+            "\"#{model_name}\", 50)" #TODO find out what a good percentage is
         end
 
         # Constructs select statement for given query,
@@ -141,11 +149,11 @@ module DataMapper
         #
         # @api private
         def query_statement(query)
-          #for $book in doc("books.xml")/books
+          #for $book in doc("books")/books
           #let $info := $book/bookinfo
           #let $title := $info/title,
           #    $isbn := $info/isbn,
-          #    $date := $info/pubdate order by $date descending 
+          #    $date := $info/pubdate order by $date descending
           #return if (exists($isbn))
           #then concat($date, " ", $isbn, " ", $title) else ()
           bind_values = []

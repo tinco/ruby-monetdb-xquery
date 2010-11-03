@@ -494,7 +494,7 @@ module MonetDBDriver
         ac = " 1"
       end
 
-      send(format_command("algebra " + ac))
+      send(format_command("algebra" + ac))
 
       response = receive
       if response == MSG_PROMPT
@@ -508,7 +508,7 @@ module MonetDBDriver
 
     # Is the algebra backend being used?
     def algebra?
-      @algebra
+      @algebra == nil ? True : @algebra #default is on
     end
 
     # Check if monetdb is running behind the merovingian proxy and forward the connection in case
