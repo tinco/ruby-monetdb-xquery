@@ -142,13 +142,17 @@ module DataObjects
       end
 
       def cast(column, value)
-        case @column_types.reverse[column].name #yeah, reverse.. -_-
-        when 'String'
-          value
-        when 'Integer'
-          value.to_i
+        if type = @column_types.reverse[column] #yeah, reverse.. -_-
+          case type.name
+          when 'String'
+            value
+          when 'Integer'
+            value.to_i
+          else
+            raise Exception.new "XQueryReader unsupported datatype: #{@column_types.reverse[column].name}"
+          end
         else
-          raise Exception.new "XQueryReader unsupported datatype: #{@column_types.reverse[column].name}"
+          value # No type for this field so we keep it string
         end
       end
     end #class Reader

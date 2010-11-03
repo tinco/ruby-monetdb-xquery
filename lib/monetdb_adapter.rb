@@ -68,6 +68,39 @@ module DataMapper
         execute(statement, *bind_values).affected_rows
       end
 
+      def create_model_storage(model)
+        if not storage_exists?(model.storage_name(name))
+          create_document_statements(model).each do |s|
+            execute(s)
+          end
+          true
+        end
+      end
+
+      def update_model_storage(model)
+        storage_exists?(model.storage_name(name)) #TODO Change this if there actually is a use
+      end
+
+      def destroy_model_storage(model)
+        return true unless storage_exists?(model.storage_name(name))
+        execute(drop_document_statement(model))
+        true
+      end
+
+      def storage_exists?(storage_name)
+        documents.any? {|doc| doc["content"] == storage_name}
+      end
+
+      def documents
+        types = []
+        with_connection do |connection|
+          command = connection.create_command(documents_statement)
+          command.set_types(types)
+          reader = command.execute_reader([])
+          records = reader.entries
+        end
+      end
+
       module XQuery #:nodoc:
         #TODO rename to something sensible (and research if qualify is necessary at all
         def property_to_column_name(property, qualify)
@@ -81,6 +114,22 @@ module DataMapper
           end
 
           column_name << xvar(property.field)
+        end
+
+        def documents_statement
+          "<documents>" +
+          "{pf:documents()}" +
+          "</documents>"
+        end
+
+        def create_document_statements(model)
+          model_name = model.name.downcase.pluralize
+          location = "tmp/#{model.storage_name(name)}.xml"
+          statements = []
+          statements << "fn:put(<#{model_name}></#{model_name}>, \"#{location}\")"
+          statements << "<result>{pf:add-doc(" +
+            "\"#{location}\",\"#{model_name}\", " +
+            "\"#{model_name}\", 50)}</result>" #TODO find out what a good percentage is
         end
 
         # Constructs select statement for given query,
