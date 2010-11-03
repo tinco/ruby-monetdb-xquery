@@ -486,6 +486,31 @@ module MonetDBDriver
       @auto_commit
     end
 
+    # Turns XQuery Algebra backend on/off
+    def set_algebra(flag=true)
+      if flag == false
+        ac = " 0"
+      else 
+        ac = " 1"
+      end
+
+      send(format_command("algebra " + ac))
+
+      response = receive
+      if response == MSG_PROMPT
+        @algebra = flag
+      elsif response[0].chr == MSG_INFO
+        raise MonetDBCommandError, response
+        return
+      end
+
+    end
+
+    # Is the algebra backend being used?
+    def algebra?
+      @algebra
+    end
+
     # Check if monetdb is running behind the merovingian proxy and forward the connection in case
     def merovingian?
       if @server_name.downcase == 'merovingian'

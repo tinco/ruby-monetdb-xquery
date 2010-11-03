@@ -97,7 +97,9 @@ module DataMapper
         with_connection do |connection|
           command = connection.create_command(documents_statement)
           command.set_types(types)
+          connection.set_algebra(false) # Put command not supported by current MonetDB Algebra backend
           reader = command.execute_reader([])
+          connection.set_algebra(true)
           records = reader.entries
         end
       end
