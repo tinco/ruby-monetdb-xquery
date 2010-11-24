@@ -1,4 +1,22 @@
 Warning: this version has crude support for xquery added and has not been properly tested or completed, use with caution.
+
+Also: I might not work on this for a while. It is in near working condition. If you are interested in using it you can send me a message.
+If I don't work on it for a while then it probably be is because I don't really have a use case for this, if you do I am certainly interested and will probably try to fix anything the adapter currently can't do for you if you let me know.
+
+What it certainly supports:
+Creating, Updating and Destroying documents.
+It can perform simple queries, probably also more complex queries. One thing it might not be good at is quering complex documents (with many nested nodes)
+With this I mean that it can probably do whatever you would use a regular SQL database for. (simple data interrelated through foreign_keys queries with joins)
+
+Cool stuff you can do with xml, it probably can't do. (nested data, recursive queries, querying multiple models)
+
+As I said, I am still interested in this. If I get the time/motivation I will try to get any or multiple of these fancy xml features working.
+
+Cheers,
+Tinco
+
+
+Original comments:
 == Standalone driver ==
 This directory contains the a ruby interface to monetdb5 
 written in pure ruby.
